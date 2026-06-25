@@ -71,8 +71,8 @@ jobs:
         
     - name: Upload Release
       run: |
-        gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\win-x64\publish\ACNH Chat Console.exe"
-        gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\linux-x64\publish\ACNH Chat Console"
+        gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\win-x64\publish\ACNHPoker-Console.exe"
+        gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\linux-x64\publish\ACNHPoker-Console"
       env:
         GITHUB_TOKEN: ${{ github.token }}
           
