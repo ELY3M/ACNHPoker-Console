@@ -1,0 +1,81 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Android Build
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  workflow_call:
+  
+env:
+  # Path to the solution file relative to the root of the project.
+  SOLUTION_FILE_PATH: .
+  NETVERSION: net10.0
+  
+  # Configuration type to build.
+  # You can convert this to a build matrix if you need coverage of multiple configuration types.
+  # https://docs.github.com/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+  BUILD_CONFIGURATION: Release
+
+
+permissions: write-all
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+            
+    - name: Setup .NET 10
+      uses: actions/setup-dotnet@v4
+      with:
+       dotnet-version: '10.0.x'
+ 
+    - name: Restore NuGet packages
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: dotnet restore ${{env.SOLUTION_FILE_PATH}}
+               
+
+    - name: publish-windows
+      working-directory: ${{env.GITHUB_WORKSPACE}}
+      ###run: dotnet publish -c Release -f ${{ env.NETVERSION }} -p:RuntimeIdentifierOverride=win10-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:WindowsAppSDKSelfContained=true
+      run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+
+    - name: publish-linux
+      # working-directory: ${{env.GITHUB_WORKSPACE}}
+      run: dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true      
+            
+    - name: List Dirs 
+      run: | 
+         dir ${{ github.workspace }}
+         dir ${{ github.workspace }}\bin\Release\    
+         dir ${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\win-x64\publish
+         dir ${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\linux-x64\publish 
+
+
+    - name: Create Release
+      uses: actions/create-release@latest
+      env:
+        GITHUB_TOKEN: ${{ github.token }} 
+      with:
+        draft: false
+        prerelease: false
+        release_name: ${{ github.run_number }} ###${{ steps.version.outputs.version }}
+        tag_name: ${{ github.run_number }}
+        body: ${{ github.event.head_commit.message }}
+        
+    - name: Upload Release
+      run: |
+        gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\win-x64\publish\ACNH Chat Console.exe"
+        gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\linux-x64\publish\ACNH Chat Console"
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+          
+        
+        
+        
