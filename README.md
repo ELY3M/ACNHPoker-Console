@@ -1,7 +1,12 @@
-# ACNH Chat Console
+# ACNHPoker Console
 
 ## This app is for Windows or Linux.    
-## I made this app because nooklink SUCKS and it do not work for me.  
+## Chat part is done.   
+
+# TO DO:  
+* load nhi
+* inventory freeze and unfreeze
+
 
 ## Prerequisite
 
