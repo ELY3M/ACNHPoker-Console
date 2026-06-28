@@ -1,10 +1,12 @@
 ﻿// See https://aka.ms/new-console-template for more information
+using ACNHPokerCore;
 using Controller;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.RegularExpressions;
-
+using System.IO;
 
 Console.WriteLine("ACNHPoker Console");
 
@@ -22,52 +24,320 @@ Console.WriteLine("ACNHPoker Console");
 
    int GameCap = 24;
 
-controller controller = null;
+   byte[] header;
+
+//DataTable itemSource;
+//DataTable recipeSource;
+//DataTable flowerSource;
+//DataTable variationSource;
+
+
+controller controller = null;       
 
 Console.WriteLine("Enter Switch IP Address:");
-getipaddress = Console.ReadLine();
-Connect(getipaddress);
 
-
-Console.WriteLine("=== MAIN MENU ===");
-Console.WriteLine("1) Chat");
-Console.WriteLine("2) Fill your pockets (.nhi item)");
-Console.WriteLine("3) Freeze (auto refill)");
-Console.WriteLine("4) Unfreeze (stop refilling)");
-Console.WriteLine("5) Exit");
-Console.Write("\r\nSelect an option: ");
-
-string menuSelection = Console.ReadLine();
-
-switch (menuSelection)
+if (File.Exists(@"ip.txt")) {
+    string getipaddressfile = File.ReadAllText(@"ip.txt");
+    getipaddress = getipaddressfile;
+    Connect(getipaddress);
+}
+else
 {
-    case "1":
-        Chatstart();
-        break;
-    case "2":
-        Console.WriteLine("Fill your pockets not implemented yet");
-        break;
-    case "3":
-        Console.WriteLine("Freeze not implemented yet");
-        break;
-    case "4":
-        Console.WriteLine("Unfreeze not implemented yet");
-        break; 
-   case "5":
-        Console.WriteLine("\nExiting...");
-        keepRunning = false;
-        break;   
-    default:
-        Console.WriteLine("\nInvalid option. Press any key to try again.");
-        break;
+    getipaddress = Console.ReadLine();
+    Connect(getipaddress);
 }
 
-if (keepRunning)
+
+
+while (keepRunning)
 {
-    Console.WriteLine("\nPress any key to return to the menu...");
-    Console.ReadKey();
+    Console.WriteLine("=== MAIN MENU ===");
+    Console.WriteLine("1) Chat");
+    Console.WriteLine("2) Read your pockets and list items you have in your pockets");
+    Console.WriteLine("3) Fill your pockets (.nhi item)");
+    Console.WriteLine("4) Freeze (auto refill)");
+    Console.WriteLine("5) Unfreeze (stop refilling)");
+    Console.WriteLine("6) Exit");
+    Console.Write("\r\nSelect an option: ");
+
+    string menuSelection = Console.ReadLine();
+    
+    switch (menuSelection)
+    {
+        case "1":
+            Chatstart();
+            break;
+        case "2":
+            Console.WriteLine("Reading your pockets");
+            UpdateInventory();
+            break;
+        case "3":
+            Console.WriteLine("Loading .nhinot implemented yet");
+            break;
+        case "4":
+            Console.WriteLine("Freezing your inventory");
+            invfreeze();
+            break;
+        case "5":
+            Console.WriteLine("Unfreezing your inventory");
+            invunfreeze();
+            break;
+        case "6":
+            Console.WriteLine("\nExiting...");
+            keepRunning = false;
+            break;
+        case "e":
+            Console.WriteLine("\nExiting...");
+            keepRunning = false;
+            break;
+        case "exit":
+            Console.WriteLine("\nExiting...");
+            keepRunning = false;
+            break;
+        default:
+            Console.WriteLine("\nInvalid option. Press any key to try again.");
+            break;
+    }
+    
+    if (keepRunning && menuSelection != "6")
+    {
+        Console.WriteLine("\nPress any key to return to the menu...");
+        Console.ReadKey();
+    }
+
+
 }
 
+
+
+void UpdateInventory()
+{
+    //AllowInventoryUpdate = false;
+    Console.WriteLine("Reading Inventory...");
+    
+    try
+    {
+        byte[] bank01To20 = Utilities.GetInventoryBank(socket, 1);
+        if (bank01To20 == null)
+        {
+            return;
+        }
+        byte[] bank21To40 = Utilities.GetInventoryBank(socket, 21);
+        if (bank21To40 == null)
+        {
+            return;
+        }
+
+        string Bank1 = Utilities.ByteToHexString(bank01To20);
+        string Bank2 = Utilities.ByteToHexString(bank21To40);
+
+        Console.WriteLine("\nBank1:\n");
+        Console.WriteLine(Bank1);
+        Console.WriteLine("\n====================================\nBank2:\n");
+        Console.WriteLine(Bank2);
+        Console.WriteLine("\n");
+
+
+
+
+
+
+        /*
+        foreach (InventorySlot btn in < InventorySlot > ())
+        {
+            if (btn.Tag == null)
+                continue;
+
+            if (btn.Tag.ToString() == "")
+                continue;
+
+            int slotId = int.Parse(btn.Tag.ToString());
+
+            byte[] slotBytes = new byte[2];
+            byte[] flag0Bytes = new byte[1];
+            byte[] flag1Bytes = new byte[1];
+            byte[] dataBytes = new byte[4];
+            byte[] recipeBytes = new byte[2];
+            byte[] fenceBytes = new byte[2];
+
+            int slotOffset;
+            int countOffset;
+            int flag0Offset;
+            int flag1Offset;
+            if (slotId < 21)
+            {
+                slotOffset = ((slotId - 1) * 0x8);
+                flag0Offset = 0x3 + ((slotId - 1) * 0x8);
+                flag1Offset = 0x2 + ((slotId - 1) * 0x8);
+                countOffset = 0x4 + ((slotId - 1) * 0x8);
+            }
+            else
+            {
+                slotOffset = ((slotId - 21) * 0x8);
+                flag0Offset = 0x3 + ((slotId - 21) * 0x8);
+                flag1Offset = 0x2 + ((slotId - 21) * 0x8);
+                countOffset = 0x4 + ((slotId - 21) * 0x8);
+            }
+
+            if (slotId < 21)
+            {
+                Buffer.BlockCopy(bank01To20, slotOffset, slotBytes, 0x0, 0x2);
+                Buffer.BlockCopy(bank01To20, flag0Offset, flag0Bytes, 0x0, 0x1);
+                Buffer.BlockCopy(bank01To20, flag1Offset, flag1Bytes, 0x0, 0x1);
+                Buffer.BlockCopy(bank01To20, countOffset, dataBytes, 0x0, 0x4);
+                Buffer.BlockCopy(bank01To20, countOffset, recipeBytes, 0x0, 0x2);
+                Buffer.BlockCopy(bank01To20, countOffset + 0x2, fenceBytes, 0x0, 0x2);
+            }
+            else
+            {
+                Buffer.BlockCopy(bank21To40, slotOffset, slotBytes, 0x0, 0x2);
+                Buffer.BlockCopy(bank21To40, flag0Offset, flag0Bytes, 0x0, 0x1);
+                Buffer.BlockCopy(bank21To40, flag1Offset, flag1Bytes, 0x0, 0x1);
+                Buffer.BlockCopy(bank21To40, countOffset, dataBytes, 0x0, 0x4);
+                Buffer.BlockCopy(bank21To40, countOffset, recipeBytes, 0x0, 0x2);
+                Buffer.BlockCopy(bank21To40, countOffset + 0x2, fenceBytes, 0x0, 0x2);
+            }
+
+            string itemId = Utilities.Flip(Utilities.ByteToHexString(slotBytes));
+            string itemData = Utilities.Flip(Utilities.ByteToHexString(dataBytes));
+            string recipeData = Utilities.Flip(Utilities.ByteToHexString(recipeBytes));
+            string fenceData = Utilities.Flip(Utilities.ByteToHexString(fenceBytes));
+            string flag0 = Utilities.ByteToHexString(flag0Bytes);
+            string flag1 = Utilities.ByteToHexString(flag1Bytes);
+            UInt16 intId = Convert.ToUInt16(itemId, 16);
+
+            Console.WriteLine("Slot : " + slotId.ToString() + " ID : " + itemId + " Data : " + itemData + " recipeData : " + recipeData + " Flag0 : " + flag0 + " Flag1 : " + flag1);
+            */
+        /*
+        if (itemId == "FFFE") //Nothing
+        {
+            btn.Setup("", 0xFFFE, 0x0, "", "00", "00");
+        }
+        else if (itemId == "16A2") //Recipe
+        {
+            btn.Setup(GetNameFromID(recipeData, recipeSource), 0x16A2, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, recipeSource), "", flag0, flag1);
+        }
+        else if (itemId == "1095") //Delivery
+        {
+            btn.Setup(GetNameFromID(recipeData, itemSource), 0x1095, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, itemSource, Convert.ToUInt32("0x" + itemData, 16)), "", flag0, flag1);
+        }
+        else if (itemId == "16A1") //Bottle Message
+        {
+            btn.Setup(GetNameFromID(recipeData, recipeSource), 0x16A1, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, recipeSource), "", flag0, flag1);
+        }
+        else if (itemId == "0A13") // Fossil
+        {
+            btn.Setup(GetNameFromID(recipeData, itemSource), 0x0A13, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, itemSource), "", flag0, flag1);
+        }
+        else if (itemId == "114A") // Money Tree
+        {
+            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), GetImagePathFromID(recipeData, itemSource), flag0, flag1);
+        }
+        else if (itemId == "315A" || itemId == "1618" || itemId == "342F") // Wall-Mounted
+        {
+            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), GetImagePathFromID(recipeData, itemSource, Convert.ToUInt32("0x" + Utilities.TranslateVariationValueBack(fenceData), 16)), flag0, flag1);
+        }
+        else if (ItemAttr.HasFenceWithVariation(intId)) // Fence Variation
+        {
+            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + fenceData, 16)), "", flag0, flag1);
+        }
+        else
+        {
+            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), "", flag0, flag1);
+        }
+        */
+        /// }
+    }
+    catch (Exception ex)
+    {
+        //MyLog.LogEvent("MainForm", "UpdateInventory: " + ex.Message);
+        //Invoke((MethodInvoker)delegate { InventoryAutoRefreshToggle.Checked = false; });
+        //InventoryRefreshTimer.Stop();
+        Console.WriteLine(ex.Message + " This seems like a bad idea but it's fine for now.");
+        return;
+    }
+
+    //AllowInventoryUpdate = true;
+}
+
+string[] GetInventoryName()
+{
+    string[] namelist = new string[8];
+    //Debug.Print("Peek 8 Name:");
+    byte[] tempHeader = null;
+    Boolean headerFound = false;
+
+    for (int i = 0; i < 8; i++)
+    {
+        byte[] b = Utilities.GetInventoryName(socket, i);
+        if (b == null)
+        {
+            namelist[i] = "NULL";
+        }
+        else
+            namelist[i] = Encoding.Unicode.GetString(b, 32, 20);
+        namelist[i] = namelist[i].Replace("\0", string.Empty);
+        if (namelist[i].Equals(string.Empty) && !headerFound)
+        {
+            header = tempHeader;
+            headerFound = true;
+        }
+        tempHeader = b;
+    }
+    return namelist;
+}
+
+byte[] GetHeader()
+{
+    return header;
+}
+
+/*
+public string GetNameFromID(string itemID, DataTable source)
+{
+    if (source == null)
+    {
+        return "";
+    }
+
+    DataRow row = source.Rows.Find(itemID);
+
+    if (row == null)
+    {
+        return ""; //row not found
+    }
+    else
+    {
+        //row found set the index and find the name
+        return (string)row["eng"];
+    }
+}
+
+public string GetNameFromIDr(string itemID, bool IsRecipe = false)
+{
+    if (!IsRecipe)
+        return GetNameFromID(itemID, itemSource);
+    else
+        return GetNameFromID(itemID, recipeSource);
+}
+*/
+
+
+void invfreeze() 
+{
+
+    byte[] bank01To20 = Utilities.GetInventoryBank(socket, 1);
+    byte[] bank21To40 = Utilities.GetInventoryBank(socket, 21);
+    Utilities.SendString(socket, Utilities.Freeze(Utilities.ItemSlotBase, bank01To20));
+    Utilities.SendString(socket, Utilities.Freeze(Utilities.ItemSlot21Base, bank21To40));
+
+}
+
+void invunfreeze()
+{
+    Utilities.SendString(socket, Utilities.UnFreeze(Utilities.ItemSlotBase));
+    Utilities.SendString(socket, Utilities.UnFreeze(Utilities.ItemSlot21Base));
+}
 
 
 void Chatstart()

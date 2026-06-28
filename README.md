@@ -1,11 +1,16 @@
 # ACNHPoker Console
 
 ## This app is for Windows or Linux.    
-## Chat part is done.   
+
+## Done:
+* Chat part is done.   
+* inventory freeze and unfreeze
 
 # TO DO:  
+* read inventory (pockets)
 * load nhi
-* inventory freeze and unfreeze
+
+
 
 
 ## Prerequisite
