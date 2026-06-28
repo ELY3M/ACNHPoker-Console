@@ -1,12 +1,13 @@
 ﻿// See https://aka.ms/new-console-template for more information
 using ACNHPokerCore;
 using Controller;
+using System.Data;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.IO;
 
 Console.WriteLine("ACNHPoker Console");
 
@@ -35,6 +36,10 @@ Console.WriteLine("ACNHPoker Console");
 controller controller = null;       
 
 Console.WriteLine("Enter Switch IP Address:");
+
+/*
+ * you can save your switch's ip address in a file called ip.txt in the same directory as this program.
+*/
 
 if (File.Exists(@"ip.txt")) {
     string getipaddressfile = File.ReadAllText(@"ip.txt");
@@ -114,8 +119,13 @@ void UpdateInventory()
 {
     //AllowInventoryUpdate = false;
     Console.WriteLine("Reading Inventory...");
-    
-    try
+
+    DataTable itemSource = LoadItemCSV(Utilities.itemPath);
+    DataTable recipeSource = LoadItemCSV(Utilities.recipePath);
+    DataTable flowerSource = LoadItemCSV(Utilities.flowerPath);
+    DataTable variationSource = LoadItemCSV(Utilities.variationPath);
+
+try
     {
         byte[] bank01To20 = Utilities.GetInventoryBank(socket, 1);
         if (bank01To20 == null)
@@ -138,20 +148,10 @@ void UpdateInventory()
         Console.WriteLine("\n");
 
 
+        //int slotId = int.Parse(Tag.ToString());
 
-
-
-
-        /*
-        foreach (InventorySlot btn in < InventorySlot > ())
+        for (int slotId = 1; slotId <= 40; slotId++)
         {
-            if (btn.Tag == null)
-                continue;
-
-            if (btn.Tag.ToString() == "")
-                continue;
-
-            int slotId = int.Parse(btn.Tag.ToString());
 
             byte[] slotBytes = new byte[2];
             byte[] flag0Bytes = new byte[1];
@@ -206,48 +206,63 @@ void UpdateInventory()
             string flag1 = Utilities.ByteToHexString(flag1Bytes);
             UInt16 intId = Convert.ToUInt16(itemId, 16);
 
-            Console.WriteLine("Slot : " + slotId.ToString() + " ID : " + itemId + " Data : " + itemData + " recipeData : " + recipeData + " Flag0 : " + flag0 + " Flag1 : " + flag1);
-            */
-        /*
-        if (itemId == "FFFE") //Nothing
-        {
-            btn.Setup("", 0xFFFE, 0x0, "", "00", "00");
+            string itemName = Utilities.GetNameFromID(itemId, itemSource);
+
+            Console.WriteLine("Slot : " + slotId.ToString() + " ID : " + itemId + " Count : "+ (Convert.ToUInt32("0x" + itemData, 16) + 1) +" Data : " + itemData + " recipeData : " + recipeData + " Flag0 : " + flag0 + " Flag1 : " + flag1);
+
+            //Console.WriteLine("Item Name : " + itemName);
+
+            //Convert.ToUInt16("0x" + itemId, 16)
+            //Console.WriteLine("Count: " + (Convert.ToUInt32("0x" + itemData, 16) + 1));
+
+
+            if (itemId == "FFFE") //Nothing
+            {
+                Console.WriteLine("Slot : " + slotId.ToString() + " is empty.");
+            }
+            else if (itemId == "16A2") //Recipe
+            {
+                Console.WriteLine("Slot: " + slotId.ToString() + " is a recipe for " + Utilities.GetNameFromID(recipeData, recipeSource));
+            }
+            else if (itemId == "1095") //Delivery
+            {
+                Console.WriteLine("Slot: " + slotId.ToString() + " is a delivery for " + Utilities.GetNameFromID(recipeData, itemSource));
+            }
+            else if (itemId == "16A1") //Bottle Message
+            {
+               //btn.Setup(Utilities.GetNameFromID(recipeData, recipeSource), 0x16A1, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, recipeSource), "", flag0, flag1);
+               Console.WriteLine("Slot: " + slotId.ToString() + " is a bottle message for " + Utilities.GetNameFromID(recipeData, recipeSource));
+            }
+            else if (itemId == "0A13") // Fossil
+            {
+                //btn.Setup(Utilities.GetNameFromID(recipeData, itemSource), 0x0A13, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, itemSource), "", flag0, flag1);
+                Console.WriteLine("Slot: " + slotId.ToString() + " is a fossil for " + Utilities.GetNameFromID(recipeData, itemSource));
+            }
+            else if (itemId == "114A") // Money Tree
+            {
+                //btn.Setup(Utilities.GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), GetImagePathFromID(recipeData, itemSource), flag0, flag1);
+                Console.WriteLine("Slot: " + slotId.ToString() + " is a money tree for " + Utilities.GetNameFromID(itemId, itemSource));
+            }
+            else if (itemId == "315A" || itemId == "1618" || itemId == "342F") // Wall-Mounted
+            {
+                //btn.Setup(Utilities.GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), GetImagePathFromID(recipeData, itemSource, Convert.ToUInt32("0x" + Utilities.TranslateVariationValueBack(fenceData), 16)), flag0, flag1);
+                Console.WriteLine("Slot: " + slotId.ToString() + " is a wall-mounted item for " + Utilities.GetNameFromID(itemId, itemSource));
+            }
+            else if (ItemAttr.HasFenceWithVariation(intId)) // Fence Variation
+            {
+                //btn.Setup(Utilities.GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + fenceData, 16)), "", flag0, flag1);
+                Console.WriteLine("Slot: " + slotId.ToString() + " is a fence variation for " + Utilities.GetNameFromID(itemId, itemSource));
+            }
+            else
+            {
+                //btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), "", flag0, flag1);
+                Console.WriteLine("Slot: " + slotId.ToString() + " is an item for " + Utilities.GetNameFromID(itemId, itemSource));
+
+            }
+            
         }
-        else if (itemId == "16A2") //Recipe
-        {
-            btn.Setup(GetNameFromID(recipeData, recipeSource), 0x16A2, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, recipeSource), "", flag0, flag1);
-        }
-        else if (itemId == "1095") //Delivery
-        {
-            btn.Setup(GetNameFromID(recipeData, itemSource), 0x1095, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, itemSource, Convert.ToUInt32("0x" + itemData, 16)), "", flag0, flag1);
-        }
-        else if (itemId == "16A1") //Bottle Message
-        {
-            btn.Setup(GetNameFromID(recipeData, recipeSource), 0x16A1, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, recipeSource), "", flag0, flag1);
-        }
-        else if (itemId == "0A13") // Fossil
-        {
-            btn.Setup(GetNameFromID(recipeData, itemSource), 0x0A13, Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(recipeData, itemSource), "", flag0, flag1);
-        }
-        else if (itemId == "114A") // Money Tree
-        {
-            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), GetImagePathFromID(recipeData, itemSource), flag0, flag1);
-        }
-        else if (itemId == "315A" || itemId == "1618" || itemId == "342F") // Wall-Mounted
-        {
-            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), GetImagePathFromID(recipeData, itemSource, Convert.ToUInt32("0x" + Utilities.TranslateVariationValueBack(fenceData), 16)), flag0, flag1);
-        }
-        else if (ItemAttr.HasFenceWithVariation(intId)) // Fence Variation
-        {
-            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + fenceData, 16)), "", flag0, flag1);
-        }
-        else
-        {
-            btn.Setup(GetNameFromID(itemId, itemSource), Convert.ToUInt16("0x" + itemId, 16), Convert.ToUInt32("0x" + itemData, 16), GetImagePathFromID(itemId, itemSource, Convert.ToUInt32("0x" + itemData, 16)), "", flag0, flag1);
-        }
-        */
-        /// }
     }
+
     catch (Exception ex)
     {
         //MyLog.LogEvent("MainForm", "UpdateInventory: " + ex.Message);
@@ -291,6 +306,69 @@ byte[] GetHeader()
 {
     return header;
 }
+
+
+static DataTable LoadItemCSV(string filePath)
+{
+    var dt = new DataTable();
+
+    File.ReadLines(filePath).Take(1)
+        .SelectMany(x => x.Split([" ; "], StringSplitOptions.RemoveEmptyEntries))
+        .ToList()
+        .ForEach(x => dt.Columns.Add(x.Trim()));
+
+    File.ReadLines(filePath).Skip(1)
+        .Select(x => x.Split([" ; "], StringSplitOptions.RemoveEmptyEntries))
+        .ToList()
+        .ForEach(line => dt.Rows.Add(line));
+
+    if (dt.Columns.Contains("id"))
+        dt.PrimaryKey = [dt.Columns["id"]];
+
+    return dt;
+}
+
+static DataTable LoadCSVwoKey(string filePath)
+{
+    var dt = new DataTable();
+
+    File.ReadLines(filePath).Take(1)
+        .SelectMany(x => x.Split([" ; "], StringSplitOptions.RemoveEmptyEntries))
+        .ToList()
+        .ForEach(x => dt.Columns.Add(x.Trim()));
+
+    File.ReadLines(filePath).Skip(1)
+        .Select(x => x.Split([" ; "], StringSplitOptions.RemoveEmptyEntries))
+        .ToList()
+        .ForEach(line => dt.Rows.Add(line));
+
+    return dt;
+}
+
+static byte[] LoadBinaryFile(string file)
+{
+    return File.Exists(file) ? File.ReadAllBytes(file) : null;
+}
+static Dictionary<string, string> CreateOverride(string path)
+{
+    Dictionary<string, string> dict = [];
+
+    if (!File.Exists(path)) return dict;
+
+    string[] lines = File.ReadAllLines(path);
+
+    foreach (string line in lines)
+    {
+        string[] parts = line.Split([" ; "], StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length == 3)
+        {
+            dict.Add(parts[1], parts[2]);
+        }
+    }
+
+    return dict;
+}
+
 
 /*
 public string GetNameFromID(string itemID, DataTable source)

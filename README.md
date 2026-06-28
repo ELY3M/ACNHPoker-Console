@@ -5,9 +5,10 @@
 ## Done:
 * Chat part is done.   
 * inventory freeze and unfreeze
+* read inventory (pockets)
+
 
 # TO DO:  
-* read inventory (pockets)
 * load nhi
 
 
