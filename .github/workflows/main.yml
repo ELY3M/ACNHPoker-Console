@@ -31,11 +31,11 @@ jobs:
       - name: publish-windows
         working-directory: ${{env.GITHUB_WORKSPACE}}
         ###run: dotnet publish -c Release -f ${{ env.NETVERSION }} -p:RuntimeIdentifierOverride=win10-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:WindowsAppSDKSelfContained=true
-        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true ./publish-windows
+        run: dotnet publish . -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true ./publish-windows
    
       - name: publish-linux
         # working-directory: ${{env.GITHUB_WORKSPACE}}
-        run: dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true ./publish-linux      
+        run: dotnet publish . -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true ./publish-linux      
               
       - name: get date/date 
         env:
