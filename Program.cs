@@ -2,10 +2,8 @@
 using ACNHPokerCore;
 using Controller;
 using System.Data;
-using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection.PortableExecutable;
 using System.Text;
 using System.Text.RegularExpressions;
 

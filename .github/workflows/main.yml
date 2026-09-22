@@ -1,0 +1,76 @@
+name: Build
+
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+  workflow_dispatch:
+  workflow_call:
+
+permissions: write-all
+
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v7
+              
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+         dotnet-version: '10.0.x'
+   
+      # - name: Restore NuGet packages
+        # working-directory: ${{env.GITHUB_WORKSPACE}}
+        # run: dotnet restore ${{env.SOLUTION_FILE_PATH}}
+                 
+   
+      - name: publish-windows
+        working-directory: ${{env.GITHUB_WORKSPACE}}
+        ###run: dotnet publish -c Release -f ${{ env.NETVERSION }} -p:RuntimeIdentifierOverride=win10-x64 -p:SelfContained=true -p:PublishSingleFile=true -p:WindowsAppSDKSelfContained=true
+        run: dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true ./publish-windows
+   
+      - name: publish-linux
+        # working-directory: ${{env.GITHUB_WORKSPACE}}
+        run: dotnet publish -c Release -r linux-x64 --self-contained true -p:PublishSingleFile=true ./publish-linux      
+              
+      - name: get date/date 
+        env:
+          TZ: "America/Chicago"
+        run: | 
+          echo "NOW=$(date +'%m-%d-%Y-%I.%M.%S.%p')" >> $GITHUB_ENV
+               
+      - name: Upload Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: false
+          prerelease: false    
+          tag_name: ${{ env.NOW }}
+          body: ${{ github.event.head_commit.message }}
+          files: ${{ github.workspace }}/publish-windows/ACNHPoker-Console.exe, ${{ github.workspace }}/publish-linux/ACNHPoker-Console
+          name: "Release ${{ env.NOW }}"   
+   
+      # - name: Create Release
+        # uses: actions/create-release@latest
+        # env:
+          # GITHUB_TOKEN: ${{ github.token }} 
+        # with:
+          # draft: false
+          # prerelease: false
+          # release_name: ${{ github.run_number }} ###${{ steps.version.outputs.version }}
+          # tag_name: ${{ github.run_number }}
+          # body: ${{ github.event.head_commit.message }}
+          
+      # - name: Upload Release
+        # run: |
+          # gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\win-x64\publish\ACNHPoker-Console.exe"
+          # gh release upload ${{ github.run_number }} "${{ github.workspace }}\bin\Release\${{ env.NETVERSION }}\linux-x64\publish\ACNHPoker-Console"
+        # env:
+          # GITHUB_TOKEN: ${{ github.token }}
+            
+          
+        
+        
